@@ -8,10 +8,11 @@ set (CMAKE_CXX_EXTENSIONS ON)
 
 if("${CMAKE_SIZEOF_VOID_P}" STREQUAL "4")
     message(FATAL_ERROR "x64 system is required to build BedrockPy, aborting..." )
-    set (VCPKG_PACKAGE_TRIPLET "x86-windows")
+    set (VCPKG_TARGET_TRIPLET "x86-windows")
 else()
-    set (VCPKG_PACKAGE_TRIPLET "x64-windows")
+    set (VCPKG_TARGET_TRIPLET "x64-windows")
 endif()
 
-add_subdirectory("CMakeUtils")
+include(install_dependency)
+
 add_subdirectory("BedrockPy")
