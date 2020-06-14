@@ -4,6 +4,7 @@ on: [push]
 
 env:
   bds_version: 1.14.60.5
+  vcpkgResponseFile: '${{ github.workspace }}/vcpkgResponseFile.txt'
 
 jobs:
   build:
@@ -14,16 +15,12 @@ jobs:
       with:
         submodules: 'recursive'
 
-    - name: Install vcpkg
-      uses: lukka/run-vcpkg@v2
+    - name: Restore from cache and run vcpkg
+      uses: lukka/run-vcpkg@v3
       with:
         vcpkgDirectory: '${{ github.workspace }}/vcpkg'
-        vcpkgArguments: '@${{ github.workspace }}/vcpkg.txt'
+        vcpkgArguments: '@${{ env.vcpkgResponseFile }}'
         appendedCacheKey: ${{ hashFiles(env.vcpkgResponseFile) }}
-
-    - uses: ilammy/msvc-dev-cmd@v1
-      with:
-        arch: x64
 
 #     - name: Download BDS
 #       if: steps.libcache.outputs.cache-hit != 'true'
@@ -62,11 +59,11 @@ jobs:
       env:
         GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
-    - name: Upload artifact
-      uses: actions/upload-artifact@v1.0.0
-      with:
-        name: dist
-        path: C:/Program Files (x86)/ElementZero/
+#    - name: Upload artifact
+#      uses: actions/upload-artifact@v1.0.0
+#      with:
+#        name: dist
+#        path: C:/Program Files (x86)/ElementZero/
 
     - name: Upload vcpkg installed
       uses: actions/upload-artifact@v1.0.0

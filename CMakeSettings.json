@@ -1,17 +1,38 @@
 ﻿{
   "configurations": [
     {
-      "name": "x64-RelWithDebInfo",
+      "name": "RelWithDebInfo",
       "generator": "Ninja",
       "configurationType": "RelWithDebInfo",
       "inheritEnvironments": [ "clang_cl_x64" ],
-      "buildRoot": "${projectDir}\\out\\build\\${name}",
-      "installRoot": "${projectDir}\\out\\install\\${name}",
+      "buildRoot": "${projectDir}\\Build",
+      "installRoot": "${projectDir}\\Dist",
       "cmakeCommandArgs": "",
       "buildCommandArgs": "-v",
       "ctestCommandArgs": "",
-      "cmakeToolchain": "",
-      "variables": []
+      "intelliSenseMode": "windows-msvc-x64",
+      "variables": [
+        {
+          "name": "CMAKE_TOOLCHAIN_FILE",
+          "value": "${projectDir}\\vcpkg\\scripts\\buildsystems\\vcpkg.cmake",
+          "type": "STRING"
+        },
+        {
+          "name": "VCPKG_EXECUTABLE",
+          "value": "${projectDir}\\vcpkg\\vcpkg.exe",
+          "type": "STRING"
+        },
+        {
+          "name": "ChakraCore",
+          "value": "${projectDir}\\vcpkg\\installed\\elementzero\\bin\\ChakraCore.dll",
+          "type": "STRING"
+        },
+        {
+          "name": "VCPKG_TARGET_TRIPLET",
+          "value": "x64-windows",
+          "type": "STRING"
+        }
+      ]
     }
   ]
 }
