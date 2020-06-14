@@ -8,6 +8,9 @@ on:
   push:
     branches: [ master ]
 
+env:
+  BUILD_DIRECTORY: '${{ github.workspace }}/../../build'
+
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -34,7 +37,7 @@ jobs:
         # Select the mode of the action. There are three different modes: CMakeListsTxtBasic: Run CMake using a CMakeLists.txt - Basic configuration, CMakeListsTxtAdvanced: Run CMake using a CMakeLists.txt - Advanced configuration, CMakeSettingsJson: Run CMake using a CMakeSettings.json of Visual Studio.
         cmakeListsOrSettingsJson: CMakeSettingsJson # default is CMakeListsTxtBasic
         # Path to CMakeSettings.json. Used for CMakeSettingsJson mode.
-        cmakeSettingsJsonPath: ${{ github.workspace }}//CMakeSettings.json
+        cmakeSettingsJsonPath: '${{ github.workspace }}//CMakeSettings.json'
         # Indicates whether to use vcpkg's CMake toolchain file if RUNVCPKG_VCPKG_ROOT environment variable is defined, for example by a previous run-vcpkg action execution. If the variable is defined, its content would be passed with '-DVCPKG_CHAINLOAD_TOOLCHAIN_FILE=<RUNVCPKG_VCPKG_ROOT>/scripts/buildsystems/vcpkg.cmake'. Used by any mode.
 #         useVcpkgToolchainFile: # optional
         # Specify the triplet used with vcpkg. Default value is $RUNVCPKG_VCPKG_TRIPLET environment variable, which is set e.g. by the run-vcpkg. Possible values include any file name with no extension present in the vcpkgroot/trplet directory, e.g. x64-linux, x64-windows, x64-osx and so forth. Used by any mode.
@@ -42,7 +45,7 @@ jobs:
         # Specify the CMake generator to use. Possible values: Ninja: Ninja, NinjaMulti: Ninja Multi-Config UnixMakefiles: Unix Makefiles, VS16Win64: Visual Studio 2019 x64, VS16Arm64: Visual Studio 2019 ARM64, VS16Arm: Visual Studio 2019 ARM, VS16Win32: Visual Studio 2019 Win32, VS15Win64: Visual Studio 2017 x64, VS15Arm64: Visual Studio 2017 ARM64, VS15Arm: Visual Studio 2017 ARM, VS15Win32: Visual Studio 2017 Win32. Used by CMakeListsTxtBasic mode.
 #         cmakeGenerator: Ninja # optional, default is Ninja
         # Set the build directory, i.e. where CMake generates the build system files. Defaults to `$(Build.ArtifactStagingDirectory)` for CMakeLists.txt, and to `$(Build.ArtifactStagingDirectory)/<configuration-name>` for CMakeSettings.json. Used by any mode.
-#         buildDirectory: # optional, default is ${{ github.workspace }}/../../_temp
+        buildDirectory: ${{ env.BUILD_DIRECTORY }}/../../build # optional, default is ${{ github.workspace }}/../../_temp
         # Provides a mean to provide all the CMake arguments. This is required when using CMakeLists.txt in Advanced mode. For CMakeSettings.json, the arguments are already inferred, but you can append your arguments providing them here.  Used by CMakeListsTxtAdvanced and CMakeSettingsJson modes.
 #         cmakeAppendedArgs: # optional, default is 
         # The regular expression selects which CMakeSettings.json's configuration(s) to build, one or more. Used by CMakeSettingsJson mode.
@@ -56,6 +59,13 @@ jobs:
         # Indicates whether to run 'cmake --build' after CMake project files have been generated successfully. Used by any mode.
         buildWithCMake: true # optional, default is true
         # Additional parameters for both CMake and the make program (e.g. ninja or make).  Separate CMake arguments to the native make program arguments with '--', such as: '--clean-first --config Debug -- -j0'. Used by both CMakeListsTxtBasic and CMakeListsTxtAdvanced modes
-#         buildWithCMakeArgs: # optional, default is 
+        buildWithCMakeArgs: '-- -j((Get-CimInstance Win32_ComputerSystem).NumberOfLogicalProcessors)' # optional, default is 
         # Specify which shell to be used when launching commands. 'true' means the default shell is used. 'false' means no shell is used. It also can be an absolute with arguments of the shell to spawn commands with.
 #         useShell: # optional, default is true
+    - name: Upload a Build Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        # Artifact name
+        name: latest-build # optional
+        # A file, directory or wildcard pattern that describes what to upload
+        path: ${{ github.workspace }}/../../build
