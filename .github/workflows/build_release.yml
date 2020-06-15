@@ -34,7 +34,7 @@ jobs:
 #         cd BDS
 #         unzip D:/bds.zip
 #       shell: bash
-    - uses: ilammy/msvc-dev-cmd@v1.3
+    - uses: ilammy/msvc-dev-cmd@v1.3.0
       with:
         arch: x64
 
