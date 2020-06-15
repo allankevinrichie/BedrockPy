@@ -5,8 +5,11 @@ on: [push]
 env:
   bds_version: 1.14.60.5
   vcpkgResponseFile: '${{ github.workspace }}/vcpkgResponseFile.txt'
+  VCPKG_UPLOAD_DOWNLOADED: false
+  VCPKG_UPLOAD_INSTALLED: false
   PRE_BUILD_DEBUG: false
   POST_BUILD_DEBUG: false
+
 
 jobs:
   build:
@@ -51,6 +54,7 @@ jobs:
         "/c/Program Files/CMake/bin/cpack" -G ZIP .
         "/c/Program Files/CMake/bin/cpack" -G 7Z .
         ninja install
+        echo "::set-env name=BUILD_TIME::$(date +"%Y%m%d%H%M")"
       shell: bash
 
     - name: Create a new GitHub release if a new tag is pushed
@@ -66,21 +70,23 @@ jobs:
       env:
         GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
-#    - name: Upload artifact
-#      uses: actions/upload-artifact@v1.0.0
-#      with:
-#        name: dist
-#        path: C:/Program Files (x86)/ElementZero/
+    - name: Upload dist directory
+      uses: actions/upload-artifact@master
+      if: steps.organize.outputs.status == 'success' && !cancelled()
+      with:
+        name: BedrockPy_${{ env.bds_version }}_${{ env.BUILD_TIME }}
+        path: 'Dist'
 
-#    - name: Upload vcpkg installed
-#      uses: actions/upload-artifact@v1.0.0
-#      with:
-#        name: vcpkg-installed
-#        path: vcpkg/installed/${{ env.RUNVCPKG_VCPKG_TRIPLET_OUT }}
+    - name: Upload vcpkg installed
+      uses: actions/upload-artifact@v1.0.0
+      if: env.VCPKG_UPLOAD_INSTALLED == 'true' && !cancelled()
+      with:
+        name: vcpkg-installed
+        path: vcpkg/installed/${{ env.RUNVCPKG_VCPKG_TRIPLET_OUT }}
 
     - name: Upload vcpkg downloaded
       uses: actions/upload-artifact@v1.0.0
+      if: env.VCPKG_UPLOAD_DOWNLOADED == 'true' && !cancelled()
       with:
         name: vcpkg-downloaded
         path: vcpkg/downloads
-
