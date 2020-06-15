@@ -5,6 +5,8 @@ on: [push]
 env:
   bds_version: 1.14.60.5
   vcpkgResponseFile: '${{ github.workspace }}/vcpkgResponseFile.txt'
+  PRE_BUILD_DEBUG: false
+  POST_BUILD_DEBUG: false
 
 jobs:
   build:
@@ -32,6 +34,9 @@ jobs:
 #         cd BDS
 #         unzip D:/bds.zip
 #       shell: bash
+    - uses: ilammy/msvc-dev-cmd@v1.3
+      with:
+        arch: x64
 
     - name: Build BedrockPy
       uses: lukka/run-cmake@v2
@@ -67,11 +72,11 @@ jobs:
 #        name: dist
 #        path: C:/Program Files (x86)/ElementZero/
 
-    - name: Upload vcpkg installed
-      uses: actions/upload-artifact@v1.0.0
-      with:
-        name: vcpkg
-        path: vcpkg/installed/${{ env.RUNVCPKG_VCPKG_TRIPLET_OUT }}
+#    - name: Upload vcpkg installed
+#      uses: actions/upload-artifact@v1.0.0
+#      with:
+#        name: vcpkg-installed
+#        path: vcpkg/installed/${{ env.RUNVCPKG_VCPKG_TRIPLET_OUT }}
 
     - name: Upload vcpkg downloaded
       uses: actions/upload-artifact@v1.0.0
