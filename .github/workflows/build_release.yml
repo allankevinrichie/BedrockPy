@@ -21,6 +21,7 @@ jobs:
         vcpkgDirectory: '${{ github.workspace }}/vcpkg'
         vcpkgArguments: '@${{ env.vcpkgResponseFile }}'
         vcpkgTriplet: x64-windows
+        cleanAfterBuild: false
         appendedCacheKey: ${{ hashFiles(env.vcpkgResponseFile) }}
 
 #     - name: Download BDS
@@ -77,3 +78,4 @@ jobs:
       with:
         name: vcpkg-downloaded
         path: vcpkg/downloads
+
