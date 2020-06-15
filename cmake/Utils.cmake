@@ -118,3 +118,23 @@ function (install_dependency arg)
         math(EXPR i "${i} + 1")
     endwhile()
 endfunction()
+
+function (install_vcpkg)
+    if(EXISTS "${VCPKG_EXECUTABLE}")
+       message(STATUS "use vcpkg executable: ${VCPKG_EXECUTABLE}.")
+    else()
+        message(STATUS "Installing vcpkg...")
+        execute_process(
+            COMMAND $ENV{ComSpec} /D /E:ON /V:OFF /S /C bootstrap-vcpkg.bat
+            WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}\\vcpkg"
+            RESULT_VARIABLE VCPKG_INSTALL_RES
+            OUTPUT_QUIET
+        )
+        if(NOT (${VCPKG_INSTALL_RES} EQUAL 0))
+            message(SEND_ERROR "Errors occurred when installing vcpkg.")
+        else()
+            message(STATUS "succeeded.")
+        endif()
+    endif()
+
+endfunction()

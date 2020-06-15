@@ -70,3 +70,9 @@ jobs:
       with:
         name: vcpkg
         path: vcpkg/installed/${{ env.RUNVCPKG_VCPKG_TRIPLET_OUT }}
+
+    - name: Upload vcpkg downloaded
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        name: vcpkg-downloaded
+        path: vcpkg/downloads
