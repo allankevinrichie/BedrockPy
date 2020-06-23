@@ -14,10 +14,10 @@ macro (generate_git_version _out_var)
     endif ()
 endmacro ()
 
-macro (define_dll name)
+function (define_dll name)
     # set(options OPTIONAL FAST)
-    set(oneValueArgs FOLDER)
-    set(multiValueArgs LINK DELAY_LINK)
+    set(oneValueArgs DESTINATION)
+    set(multiValueArgs LINK DELAY_LINK INCLUDE RUNTIME DEFINE DEPENDENCY)
     cmake_parse_arguments(
         ARG 
         "${options}" 
@@ -30,37 +30,63 @@ macro (define_dll name)
         CONFIGURE_DEPENDS *.cpp
     )
     add_library (${name} SHARED ${srcs})
-    target_compile_definitions (
-        ${name}
-        PRIVATE DLLNAME=${name}
-    )
-    target_link_libraries (
-        ${name}
-        ${ARG_LINK}
-        ${ARG_DELAY_LINK}
-    )
+    if (DEFINED ARG_DEPENDENCY)
+        add_dependencies (${name}
+            ${ARG_DEPENDENCY}
+	)
+    endif ()
+    if (DEFINED ARG_DEFINE)
+        target_compile_definitions (
+            ${name}
+            PRIVATE 
+            ${ARG_DEFINE}
+        )
+    endif ()
+    if (DEFINED ARG_INCLUDE)
+        target_include_directories (
+            ${name}
+            PRIVATE
+            ${ARG_INCLUDE}
+	    )
+    endif ()
+    if ((DEFINED ARG_LINK) OR (DEFINED ARG_DELAY_LINK))
+        target_link_libraries (
+            ${name}
+            PRIVATE
+            ${ARG_LINK}
+            ${ARG_DELAY_LINK}
+        )
+    endif ()
     install (
         TARGETS ${name}
-        RUNTIME DESTINATION .
-        ARCHIVE DESTINATION Lib
+        RUNTIME DESTINATION ./${ARG_DESTINATION}
+#        ARCHIVE DESTINATION ./${ARG_DESTINATION}/Lib
     )
-    install_pdb (${name})
-    set_target_properties (
-        ${name}
-        PROPERTIES FOLDER ${ARG_FOLDER}
-    )
+    if (DEFINED ARG_RUNTIME)
+        add_custom_command(
+            TARGET ${name}
+            POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    ${ARG_RUNTIME}     
+                    $<TARGET_FILE_DIR:${name}>
+        )
+        install(
+            FILES ${ARG_RUNTIME}
+            DESTINATION ./${ARG_DESTINATION}
+		)
+    endif ()
     if (ARG_DELAY_LINK)
-        target_link_libraries (${name} delayimp)
+#        target_link_libraries (${name} delayimp)
         foreach (target ${ARG_DELAY_LINK})
             target_link_options (${name} PRIVATE /DELAYLOAD:${target}.dll)
         endforeach ()
     endif ()
-endmacro ()
+endfunction ()
 
-macro (define_exe name)
-    set(options TEMP)
-    set(oneValueArgs FOLDER)
-    set(multiValueArgs LINK DELAY_LINK)
+function (define_exe name)
+#    set(options TEMP)
+    set(oneValueArgs DESTINATION)
+    set(multiValueArgs LINK DELAY_LINK INCLUDE RUNTIME DEFINE DEPENDENCY)
     cmake_parse_arguments(
         ARG 
         "${options}" 
@@ -68,62 +94,84 @@ macro (define_exe name)
         "${multiValueArgs}" 
         ${ARGN}
     )
-    set (IS_TEMP $<BOOL:${ARG_TEMP}>)
     file (
         GLOB_RECURSE srcs
         CONFIGURE_DEPENDS *.cpp
     )
     add_executable (${name} ${srcs})
-    target_compile_definitions (
-        ${name}
-        PRIVATE EXENAME=${name}
-    )
-    target_link_libraries (
-        ${name}
-        ${ARG_LINK}
-        ${ARG_DELAY_LINK}
-    )
+    if (DEFINED ARG_DEPENDENCY)
+        add_dependencies (${name}
+            ${ARG_DEPENDENCY}
+	)
+    endif ()
+    if (DEFINED ARG_DEFINE)
+        target_compile_definitions (
+            ${name}
+            PRIVATE 
+            ${ARG_DEFINE}
+        )
+    endif ()
+    if (DEFINED ARG_INCLUDE)
+        target_include_directories (
+            ${name}
+            PRIVATE
+            ${ARG_INCLUDE}
+	    )
+    endif ()
+    if ((DEFINED ARG_LINK) OR (DEFINED ARG_DELAY_LINK))
+        target_link_libraries (
+            ${name}
+            PRIVATE
+            ${ARG_LINK}
+            ${ARG_DELAY_LINK}
+        )
+    endif ()
     install (TARGETS ${name}
-        RUNTIME DESTINATION $<IF:${IS_TEMP},Temp,.>
+        RUNTIME DESTINATION ./${ARG_DESTINATION}
     )
-    set_target_properties (
-        ${name}
-        PROPERTIES FOLDER "$<IF:${IS_TEMP},Temp,.>/${ARG_FOLDER}"
-    )
+    if (DEFINED ARG_RUNTIME)
+        add_custom_command(
+            TARGET ${name}
+            POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    ${ARG_RUNTIME}     
+                    $<TARGET_FILE_DIR:${name}>
+        )
+        install(
+            FILES ${ARG_RUNTIME}
+            DESTINATION ./${ARG_DESTINATION}
+		)
+    endif ()
     if (ARG_DELAY_LINK)
-        target_link_libraries (${name} delayimp)
+#        target_link_libraries (${name} delayimp)
         foreach (target ${ARG_DELAY_LINK})
             target_link_options (${name} PRIVATE /DELAYLOAD:${target}.dll)
         endforeach ()
     endif ()
-endmacro ()
+endfunction ()
 
 function (install_dependency arg)
-    list (LENGTH ARGV argv_len)
-    set (i 0)
-    while( i LESS ${argv_len})
-        list(GET ARGV ${i} argv_value)
-        message(STATUS "Processing dependency: ${argv_value} (${VCPKG_TARGET_TRIPLET})...")
+    foreach (package ${ARGV})
+        message(STATUS "processing dependency: ${package} (${VCPKG_TARGET_TRIPLET})...")
         execute_process(
-            COMMAND ${VCPKG_EXECUTABLE} install ${argv_value} --triplet ${VCPKG_TARGET_TRIPLET} 
+            COMMAND ${VCPKG_EXECUTABLE} install ${package} --triplet ${VCPKG_TARGET_TRIPLET} 
             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
             RESULT_VARIABLE VCPKG_INSTALL_RES
             OUTPUT_QUIET
         )
         if(NOT (${VCPKG_INSTALL_RES} EQUAL 0))
-            message(SEND_ERROR "Errors occurred when processing dependency ${argv_value} (${VCPKG_TARGET_TRIPLET}).")
+            message(SEND_ERROR "errors occurred when processing dependency ${package} (${VCPKG_TARGET_TRIPLET}).")
         else()
             message(STATUS "succeeded.")
         endif()
-        math(EXPR i "${i} + 1")
-    endwhile()
+    endforeach ()
 endfunction()
 
 function (install_vcpkg)
     if(EXISTS "${VCPKG_EXECUTABLE}")
        message(STATUS "use vcpkg executable: ${VCPKG_EXECUTABLE}.")
     else()
-        message(STATUS "Installing vcpkg...")
+        message(STATUS "installing vcpkg...")
         execute_process(
             COMMAND $ENV{ComSpec} /D /E:ON /V:OFF /S /C bootstrap-vcpkg.bat
             WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}\\vcpkg"
@@ -131,10 +179,56 @@ function (install_vcpkg)
             OUTPUT_QUIET
         )
         if(NOT (${VCPKG_INSTALL_RES} EQUAL 0))
-            message(SEND_ERROR "Errors occurred when installing vcpkg.")
+            message(SEND_ERROR "errors occurred when installing vcpkg.")
         else()
             message(STATUS "succeeded.")
         endif()
     endif()
 
 endfunction()
+
+macro (find_path_ variable)
+    set(options "")
+    set(oneValueArgs "")
+    set(multiValueArgs NAMES HINTS)
+    cmake_parse_arguments(
+        ARG 
+        "${options}" 
+        "${oneValueArgs}"
+        "${multiValueArgs}" 
+        ${ARGN}
+    )
+    if ((NOT DEFINED ${variable}) OR (NOT ${variable}))
+        find_path (${variable}
+            NAMES ${ARG_NAMES}
+            HINTS ${ARG_HINTS}
+            NO_DEFAULT_PATH)
+    endif ()
+    if ((NOT DEFINED ${variable}) OR (NOT ${variable}))
+        message(SEND_ERROR "cannot find path ${NAMES} with hints ${HINTS}.")
+    else ()
+        set (${variable})
+    endif ()
+endmacro ()
+
+macro (find_file_ variable)
+    set(options "")
+    set(oneValueArgs "")
+    set(multiValueArgs NAMES HINTS)
+    cmake_parse_arguments(
+        ARG 
+        "${options}" 
+        "${oneValueArgs}"
+        "${multiValueArgs}" 
+        ${ARGN}
+    )
+    if ((NOT DEFINED ${variable}) OR (NOT ${variable}))
+        find_file (${variable}
+            NAMES ${ARG_NAMES}
+            HINTS ${ARG_HINTS}
+            NO_DEFAULT_PATH)
+    endif ()
+    if ((NOT DEFINED ${variable}) OR (NOT ${variable}))
+        message(SEND_ERROR "cannot find file ${NAMES} with hints ${HINTS}.")
+    endif ()
+endmacro ()

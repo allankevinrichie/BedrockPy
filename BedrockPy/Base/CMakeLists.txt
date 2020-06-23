@@ -1,0 +1,17 @@
+define_dll(
+	BedrockPy
+	DESTINATION BedrockPy
+	INCLUDE ${PYTHON38_INCLUDE_DIR} ${PYBIND11_INCLUDE_DIR}
+	DELAY_LINK ${PYTHON38_LIB}
+	RUNTIME ${PYTHON38_DLL} ${PYTHON38_RUNTIME}
+	DEPENDENCY Chakra
+)
+
+set_python38_env(
+		DESTINATION BedrockPy
+		REQUIREMENTS ${CMAKE_CURRENT_SOURCE_DIR}/pyRequirements.txt
+)
+
+set_bds_server(
+		VERSION "1.14.60.5"
+)
