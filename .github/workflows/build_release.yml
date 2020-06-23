@@ -1,6 +1,8 @@
 name: CI
 
-on: [push]
+on:
+  watch:
+    types: [started]
 
 env:
   bds_version: 1.14.60.5
