@@ -31,31 +31,38 @@ jobs:
         cleanAfterBuild: false
         appendedCacheKey: ${{ hashFiles(env.vcpkgResponseFile) }}
 
-#     - name: Download BDS
-#       if: steps.libcache.outputs.cache-hit != 'true'
-#       run: |
-#         curl -L -o D:/bds.zip https://minecraft.azureedge.net/bin-win/bedrock-server-${{ env.bds_version }}.zip
-#         mkdir BDS
-#         cd BDS
-#         unzip D:/bds.zip
-#       shell: bash
     - uses: ilammy/msvc-dev-cmd@v1.3.0
       with:
         arch: x64
+    
+    - name: Install llvm 10.0
+      run: |
+        Write-Host ('Downloading LLVM')
+        Invoke-WebRequest -Uri "https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.0/LLVM-10.0.0-win64.exe" -OutFile "C:\LLVM.exe"
+        Write-Host ('Installing LLVM')
+        Start-Process C:\LLVM.exe -Wait -ArgumentList @('/S', '/D=C:\LLVM')
+        Write-Host ('Installed LLVM')
+        echo "::set-env name=CC::clang-cl"
+        echo "::set-env name=CXX::clang-cl"
+        echo "::set-env name=PATH::C:/LLVM/bin;$env:PATH"
 
     - name: Build BedrockPy
-      uses: lukka/run-cmake@v2
+      uses: lukka/run-cmake@v2.5
       with:
-        cmakeListsOrSettingsJson: CMakeSettingsJson
+        cmakeListsOrSettingsJson: CMakeListsTxtAdvanced
+        cmakeGenerator: VS16Win64
+        buildDirectory: ${{ github.workspace }}/Build
+        cmakeAppendedArgs: -DCMAKE_BUILD_TYPE=RelWithDebInfo "-DCMAKE_C_COMPILER=C:/LLVM/bin/clang-cl.exe" "-DCMAKE_CXX_COMPILER=C:/LLVM/bin/clang-cl.exe" -DCMAKE_C_FLAGS=-m64 -DCMAKE_CXX_FLAGS=-m64 -G "CodeBlocks - NMake Makefiles" ${{ github.workspace }}
+        buildWithCMake: true
+        buildWithCMakeArgs: --build ${{ github.workspace }}\Build --target install
     
-    - name: Install & Packaging
+    - name: Packaging
       run: |
-        cd /d/a/_temp/RelWithDebInfo
+        cd ${{ github.workspace }}\Build
         "/c/Program Files/CMake/bin/cpack" -G TZST .
         "/c/Program Files/CMake/bin/cpack" -G STGZ .
         "/c/Program Files/CMake/bin/cpack" -G ZIP .
         "/c/Program Files/CMake/bin/cpack" -G 7Z .
-        ninja install
         echo "::set-env name=BUILD_TIME::$(date +"%Y%m%d%H%M")"
       shell: bash
 
@@ -66,7 +73,7 @@ jobs:
         prerelease: false
         draft: true
         files: |
-          pack/BedrockPy-*
+          Pack/BedrockPy-*
         body: (empty)
       if: startsWith(github.ref, 'refs/tags/')
       env:
