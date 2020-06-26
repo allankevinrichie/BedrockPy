@@ -1,3 +1,4 @@
 chakracore
 python3-full
 pybind11
+Detours

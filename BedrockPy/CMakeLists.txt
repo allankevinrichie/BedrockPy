@@ -1,29 +1,6 @@
 add_subdirectory(Base)
+add_subdirectory(Python)
+add_subdirectory(LibHook)
+add_subdirectory(LibPDB)
 
-define_exe(
-	hello_world
-	DESTINATION Temp
-	INCLUDE ${PYTHON38_INCLUDE_DIR} ${PYBIND11_INCLUDE_DIR}
-	LINK ${PYTHON38_LIB}
-	RUNTIME ${PYTHON38_DLL} ${PYTHON38_RUNTIME}
-	DEFINE PRINTA="A" PRINTB="B"
-	TEMP VERBOSE
-)
-
-if (${BEDROCKPY_VERBOSE_MODE})
-	cmake_print_properties(
-		TARGETS hello_world
-		PROPERTIES
-			NAME
-			INSTALL_RPATH
-			BINARY_DIR
-			INCLUDE_DIRECTORIES
-			LINK_LIBRARIES
-			CXX_STANDARD
-			CXX_STANDARD_REQUIRED
-			COMPILE_DEFINITIONS
-			COMPILE_FLAGS
-			COMPILE_OPTIONS
-	)
-endif ()
-
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/version.hpp.in ${CMAKE_CURRENT_SOURCE_DIR}/version.hpp)

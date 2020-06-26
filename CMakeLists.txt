@@ -1,9 +1,10 @@
 cmake_minimum_required (VERSION 3.8)
 
-project("BedrockPy")
+project("BedrockPy" VERSION 0.1.0)
+set(BEDROCK_SERVER_VERSION 1.14.60.5)
 
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake ${CMAKE_SOURCE_DIR}/tools ${CMAKE_MODULE_PATH})
-set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/Dist)
+set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR}/Dist)
 
 set(VCPKG_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/vcpkg)
 #set(CMAKE_TOOLCHAIN_FILE ${VCPKG_ROOT}\\scripts\\buildsystems\\vcpkg.cmake)
@@ -23,14 +24,7 @@ set (CMAKE_CXX_FLAGS "/EHsc")
 
 # if compile on GitHub
 if(DEFINED ENV{GITHUB_ACTIONS})
-	generate_git_version (git_version)
-	set(CPACK_PACKAGE_VERSION ${git_version})
-	set(CPACK_PACKAGE_DIRECTORY ${PROJECT_SOURCE_DIR}/pack)
-	set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/LICENSE")
-	set(CPACK_SOURCE_PACKAGE_FILE_NAME BedrockPy-${git_version})
-	set(CPACK_SOURCE_IGNORE_FILES ${PROJECT_SOURCE_DIR}/Build)
-	set(CPACK_PACKAGE_CHECKSUM SHA256)
-	include (CPack)
+
 # if compile on local host
 else()
 install_vcpkg()
@@ -40,6 +34,16 @@ install_dependency(
 )
 endif()
 
+#generate_git_version (git_version)
+#set(CPACK_COMPONENTS_ALL PYTHON PYTHON_PACKAGES BEDROCK_SERVER BedrockPY)
+#set(CPACK_INSTALL_COMMANDS "./python.exe -m ensurepip --upgrade WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/BedrockPy/")
+#set(CPACK_PACKAGE_VERSION ${git_version})
+#set(CPACK_PACKAGE_DIRECTORY ${PROJECT_SOURCE_DIR}/pack)
+#set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/LICENSE")
+#set(CPACK_SOURCE_PACKAGE_FILE_NAME BedrockPy-${git_version})
+#set(CPACK_SOURCE_IGNORE_FILES ${PROJECT_SOURCE_DIR}/Build)
+#set(CPACK_PACKAGE_CHECKSUM SHA256)
+#include (CPack)
 
 add_subdirectory("BedrockPy")
 add_subdirectory("Chakra")

@@ -21,21 +21,32 @@ function(set_python38_env)
     install(
             FILES ${PYTHON38_EXE}
             DESTINATION ./${ARG_DESTINATION}/
+            COMPONENT PYTHON
     )
     install(
             DIRECTORY ${PYTHON38_PACKAGE_DIR}
             DESTINATION ./${ARG_DESTINATION}/
+            COMPONENT PYTHON
     )
     install(
             DIRECTORY ${PYTHON38_INCLUDE_DIR}/
             DESTINATION ./${ARG_DESTINATION}/include/
+            COMPONENT PYTHON
     )
     install(
             FILES ${PYTHON38_LIB}
             DESTINATION ./${ARG_DESTINATION}/libs/
+            COMPONENT PYTHON
     )
-    install(CODE "execute_process(COMMAND ./python.exe -m ensurepip --upgrade WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/${ARG_DESTINATION}/)")
+    install(
+            CODE
+            "execute_process(COMMAND ./python.exe -m ensurepip --upgrade WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/${ARG_DESTINATION}/)"
+            COMPONENT PYTHON
+    )
     if (DEFINED ARG_REQUIREMENTS)
-        install(CODE "execute_process(COMMAND ./python.exe -m pip install -r ${ARG_REQUIREMENTS} --no-warn-script-location WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/${ARG_DESTINATION}/)")
+        install(
+                CODE "execute_process(COMMAND ./python.exe -m pip install -r ${ARG_REQUIREMENTS} --no-warn-script-location WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/${ARG_DESTINATION}/)"
+                COMPONENT PYTHON
+        )
     endif()
 endfunction()

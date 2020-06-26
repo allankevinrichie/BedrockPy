@@ -16,7 +16,7 @@ endmacro ()
 
 function (define_dll name)
     # set(options OPTIONAL FAST)
-    set(oneValueArgs DESTINATION)
+    set(oneValueArgs DESTINATION COMPONENT)
     set(multiValueArgs LINK DELAY_LINK INCLUDE RUNTIME DEFINE DEPENDENCY)
     cmake_parse_arguments(
         ARG 
@@ -25,6 +25,9 @@ function (define_dll name)
         "${multiValueArgs}" 
         ${ARGN}
     )
+    if (NOT DEFINED ARG_COMPONENT)
+        set(ARG_COMPONENT ${name})
+    endif()
     file (
         GLOB_RECURSE srcs
         CONFIGURE_DEPENDS *.cpp
@@ -61,6 +64,7 @@ function (define_dll name)
         TARGETS ${name}
         RUNTIME DESTINATION ./${ARG_DESTINATION}
 #        ARCHIVE DESTINATION ./${ARG_DESTINATION}/Lib
+        COMPONENT ${ARG_COMPONENT}
     )
     if (DEFINED ARG_RUNTIME)
         add_custom_command(
@@ -73,6 +77,7 @@ function (define_dll name)
         install(
             FILES ${ARG_RUNTIME}
             DESTINATION ./${ARG_DESTINATION}
+            COMPONENT ${ARG_COMPONENT}
 		)
     endif ()
     if (ARG_DELAY_LINK)
@@ -94,6 +99,9 @@ function (define_exe name)
         "${multiValueArgs}" 
         ${ARGN}
     )
+    if (NOT DEFINED ARG_COMPONENT)
+        set(ARG_COMPONENT ${name})
+    endif()
     file (
         GLOB_RECURSE srcs
         CONFIGURE_DEPENDS *.cpp
@@ -128,6 +136,7 @@ function (define_exe name)
     endif ()
     install (TARGETS ${name}
         RUNTIME DESTINATION ./${ARG_DESTINATION}
+        COMPONENT ${ARG_COMPONENT}
     )
     if (DEFINED ARG_RUNTIME)
         add_custom_command(
@@ -140,6 +149,7 @@ function (define_exe name)
         install(
             FILES ${ARG_RUNTIME}
             DESTINATION ./${ARG_DESTINATION}
+            COMPONENT ${ARG_COMPONENT}
 		)
     endif ()
     if (ARG_DELAY_LINK)
@@ -149,6 +159,50 @@ function (define_exe name)
         endforeach ()
     endif ()
 endfunction ()
+
+function(def_py name)
+    set(oneValueArgs DESTINATION)
+    set(multiValueArgs DEPENDENCY RUNTIME)
+
+    cmake_parse_arguments(
+            ARG
+            "${options}"
+            "${oneValueArgs}"
+            "${multiValueArgs}"
+            ${ARGN}
+    )
+    add_custom_target(${name})
+    if (DEFINED ARG_DEPENDENCY)
+        add_dependencies(
+                ${name}
+                ${ARG_DEPENDENCY}
+        )
+    endif ()
+#    add_custom_command(
+#            TARGET ${name}
+#            PRE_BUILD
+#            COMMAND ${CMAKE_COMMAND} -E
+#            copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/${name} ${ARG_DESTINATION}
+#    )
+    install(
+            DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${name}
+            DESTINATION ${ARG_DESTINATION}
+    )
+    if (DEFINED ARG_RUNTIME)
+        #        add_custom_command(
+        #                TARGET ${name}
+        #                POST_BUILD
+        #                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        #                ${ARG_RUNTIME}
+        #                $<TARGET_FILE_DIR:${name}>
+        #        )
+        install(
+                FILES ${ARG_RUNTIME}
+                DESTINATION ${ARG_DESTINATION}/${name}
+                COMPONENT ${ARG_COMPONENT}
+        )
+    endif ()
+endfunction()
 
 function (install_dependency arg)
     foreach (package ${ARGV})
@@ -232,3 +286,14 @@ macro (find_file_ variable)
         message(SEND_ERROR "cannot find file ${NAMES} with hints ${HINTS}.")
     endif ()
 endmacro ()
+
+MACRO(SUBDIRLIST result curdir)
+    FILE(GLOB children RELATIVE ${curdir} ${curdir}/*)
+    SET(dirlist "")
+    FOREACH(child ${children})
+        IF(IS_DIRECTORY ${curdir}/${child})
+            LIST(APPEND dirlist ${child})
+        ENDIF()
+    ENDFOREACH()
+    SET(${result} ${dirlist})
+ENDMACRO()
