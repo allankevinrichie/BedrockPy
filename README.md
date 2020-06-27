@@ -1,2 +1,2 @@
 # BedrockPy (on developement)
-Bedrock Python modding system.
+A Bedrock Python modding system, see [wiki](https://github.com/allankevinrichie/BedrockPy/wiki).
