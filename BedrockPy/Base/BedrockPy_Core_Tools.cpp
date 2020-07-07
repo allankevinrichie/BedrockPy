@@ -13,16 +13,25 @@
 namespace py = pybind11;
 using namespace py::literals;
 
-void call_py_spf(std::function<void(*)(std::string*)> &f){f(&sss);}
-std::string ssss("ssss");void call_py_spff(std::function<void(*)(std::string*)> f){f(&ssss);}
+template<typename func_t>
+class CPPCallback{
+public:
+    CPPCallback(func_t *py_func_pointer): py_func_pointer(py_func_pointer) {
 
-using addr_t = uint64_t;
+    }
+    CPPCallback(uint64_t py_func_addr): m_py_func_pointer(reinterpret_cast<func_t*>(py_func_addr)) {
 
-template<typename T>uint64_t get_type_hash(){return typeid(T).hash_code();}
-template<typename T>uint64_t address(T tt){return uint64_t(tt);}
+    }
+    uint64_t id = typeid(int).hash_code()
 
-int ret_int()
-{return 1;}
+    func_t *py_func_pointer = nullptr;
+};
+
+template<typename T, typename ...Arg_t>
+void f(Arg_t ...arg)
+{
+    return new T(arg);
+}
 
 
 struct HookBase {

@@ -1,2 +1,8 @@
 ipython
 tqdm
+prettytable
+cppyy
+jellyfish
+pandas
+openpyxl
+parse

@@ -7,71 +7,45 @@ import re
 import uuid
 from typing import Iterable, Optional, Callable
 
-
+cppyy.ll.set_signals_as_exception(True)
 
 cppyy.cppdef("""
-#include <Python.h>
-#include <pybind11/pybind11.h>
-#include <pybind11/embed.h>
-#include <pybind11/operators.h>
-#include <pybind11/stl.h>
-#include <pybind11/functional.h>
-#include <unordered_map>
-#include <vector>
-#include <string>
-#include <cstdint>
-namespace py = pybind11;
-using namespace py::literals;
-using namespace std;
-using hash_func_t = uint64_t (*)();
+class CPPCallback{
+public:
+CPPCallback() {}
+virtual ~CPPCallback() {}
+    void *m_py_func_pointer = nullptr;
+    void *ori_func_pointer = nullptr;
+};
+
+""")
+
+cppyy.cppdef("""
+template<typename func_t>
+inline uint64_t get_func_addr(const func_t *f)
+{
+    return reinterpret_cast<uint64_t>(f);
+}
+
+
 """)
 
 
-class CPPCallback(object):
-    class CPPTemplate(Template):
-        delimiter = '%'
-
-    _cpp_arg_prefix = "arg_"
-
-    _cpp_wrapper_headers = """
-        #include <Python.h>
-        #include <pybind11/pybind11.h>
-        #include <pybind11/embed.h>
-        #include <pybind11/operators.h>
-        #include <pybind11/stl.h>
-        #include <pybind11/functional.h>
-        #include <unordered_map>
-        #include <vector>
-        #include <string>
-        namespace py = pybind11;
-        using namespace py::literals;
-        using namespace std;
-    """
-
-    _cpp_wrapper_signature = """
-    %{ret_type} %{name}(%{arg_type_with_name})
-    """
-
-    _cpp_wrapper_preamble = """
-    {
-        py
-    """
-
-    _type_cast_table = {
-        "float": ""
-    }
-
-    _valid_c_type_hashes = {
-        "int",
-        "string"
-    }
+class CPPCallback(cppyy.gbl.CPPCallback):
+    callback_table = []
 
     def __init__(self, py_callback: Callable, ret_type: str, *arg_type: Optional[str]):
+        super(CPPCallback, self).__init__()
         self.ret_type = ret_type
         self.arg_type = arg_type
-        self.arg_name = (self._cpp_arg_prefix + str(i) for i in range(len(arg_type)))
         self.c_wrapper_name = self._generate_random_identifier()
         self.callback = py_callback
+        self.callback_table.append(self)
+        self.m_py_func_pointer = cppyy.ll.reinterpret_cast["void*"](self.cppaddr)
+
+    @staticmethod
+    def callback(*arg, **kwargs):
+        raise NotImplementedError()
 
     @classmethod
     def decorator(cls, func_type: str):
@@ -97,30 +71,48 @@ class CPPCallback(object):
         parsed = parse("{ret_type}({arg_type:arg})", type_string, dict(arg=arg_parser))
         return parsed.named if parsed is not None else None
 
-    def _generate_full_arg_sigature(self):
-        return ", ".join(t + " " + n for t, n in zip(self.arg_type, self.arg_name))
+    @property
+    def cpptype(self):
+        return f"{self.ret_type}({', '.join(self.arg_type)})"
 
-    @staticmethod
-    def _get_type_hash(type_str):
-        cppyy.cppdef("auto string_id2 = [](){return typeid(std::string).hash_code();};")
+    @property
+    def cpppointertype(self):
+        return f"{self.ret_type}(*)({', '.join(self.arg_type)})"
+
+    @property
+    def cppaddr(self):
+        return cppyy.gbl.get_func_addr[self.cpptype](self.callback)
 
     def __str__(self):
-        return f"CPPCallback(\"{self.ret_type} {self.c_wrapper_name}({self._generate_full_arg_sigature()})\")"
+        return f"CPPCallback(\"{self.ret_type} {self.c_wrapper_name}({', '.join(self.arg_type)})\")"
 
     __repr__ = __str__
-
-
-class CPPGlobalDict:
-
 
 
 warp = CPPCallback.decorator
 
 
+class CPPTemplate(Template):
+    delimiter = '%'
+
+
+cppyy.ll.set_signals_as_exception(True)
+
+"int(int, inti)"
+hook_wrapper_templete = CPPTemplate("""
+%{PY_CALLBACK_SIGNATURE}
+{
+    
+
+}
+""")
+
 if __name__ == '__main__':
-    cppyy.add_include_path(r"E:\BedrockPy-Ng\Dist\BedrockPy\include")
+    cppyy.add_include_path(".")
     @warp("void(int, char*, bool)")
     def func(a, b, c):
-        pass
+        print((a,b,c))
 
-    print(func)
+    print(func.cppaddr)
+    print(func.cppaddr)
+    print(cppyy.ll.reinterpret_cast["uint64_t"](func.m_py_func_pointer))
